@@ -1,33 +1,36 @@
 const express = require('express');
 const { getRandomElement } = require('../utils');
-const { readQuotes, writeQuotes } = require('../stream');
+const { writeQuotes } = require('../stream');
 const quotesRouter = express.Router();
 
 quotesRouter.get('/random', async (req, res, next) => {
-  const quotes = await readQuotes();
-  const quote = getRandomElement(quotes);
+  const quote = getRandomElement(req.quotes);
   res.send({
     quote,
   });
 });
 
+quotesRouter.get('/:id', async (req, res, next) => {
+  const quote = req.quotes.find((f) => f.id == req.params.id);
+  res.send({
+    quote,
+  });
+});
 // big file
 quotesRouter.post('/', async (req, res, next) => {
-  const quotes = await readQuotes();
-  quotes.push(req.query);
-  await writeQuotes(quotes);
-  //   fs.writeFile(url, JSON.stringify(quotes), readDataCallback);
+  const length = req.quotes.length;
+  req.quotes.push({ ...req.query, id: length + 1 });
+  await writeQuotes(req.quotes);
   res.send({ quote: req.query });
 });
 
 quotesRouter.get('/', async (req, res, next) => {
-  const quotes = await readQuotes();
   if (!req.query.person) {
     res.send({
-      quotes,
+      quotes: req.quotes,
     });
   } else {
-    const find = quotes.filter((f) => f.person === req.query.person);
+    const find = req.quotes.filter((f) => f.person === req.query.person);
     res.send({
       quotes: find,
     });
